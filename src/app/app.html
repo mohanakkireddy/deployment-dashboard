@@ -1,0 +1,57 @@
+<mat-sidenav-container class="app-container">
+  <mat-sidenav mode="side" opened class="sidenav">
+    <div class="logo-container">
+      <mat-icon class="logo-icon">monitoring</mat-icon>
+      <span class="logo-text">Deploy Monitor</span>
+    </div>
+
+    <mat-nav-list>
+      @for (item of navItems; track item.path) {
+        <a mat-list-item
+           [routerLink]="item.path"
+           routerLinkActive="active-link"
+           [matTooltip]="item.label"
+           matTooltipPosition="right">
+          <mat-icon matListItemIcon>{{ item.icon }}</mat-icon>
+          <span matListItemTitle>{{ item.label }}</span>
+        </a>
+      }
+    </mat-nav-list>
+
+    <div class="sidenav-footer">
+      @if (isAuthenticated()) {
+        <div class="org-badge">
+          <mat-icon>business</mat-icon>
+          <span>{{ organization() || 'No org selected' }}</span>
+        </div>
+      } @else {
+        <div class="auth-warning">
+          <mat-icon>warning</mat-icon>
+          <span>Not configured</span>
+        </div>
+      }
+    </div>
+  </mat-sidenav>
+
+  <mat-sidenav-content class="main-content">
+    <mat-toolbar class="header-toolbar">
+      <span class="page-title">Deployment Monitoring Dashboard</span>
+      <span class="spacer"></span>
+      @if (isAuthenticated()) {
+        <span class="status-indicator connected">
+          <mat-icon>check_circle</mat-icon>
+          Connected
+        </span>
+      } @else {
+        <a mat-button routerLink="/settings" class="status-indicator disconnected">
+          <mat-icon>error</mat-icon>
+          Setup Required
+        </a>
+      }
+    </mat-toolbar>
+
+    <main class="content-area">
+      <router-outlet />
+    </main>
+  </mat-sidenav-content>
+</mat-sidenav-container>

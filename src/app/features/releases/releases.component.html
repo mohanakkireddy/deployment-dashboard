@@ -1,0 +1,149 @@
+@if (!isAuthenticated()) {
+  <div class="setup-prompt">
+    <mat-card class="dashboard-card setup-card">
+      <mat-card-content>
+        <mat-icon class="setup-icon">settings</mat-icon>
+        <h2>Setup Required</h2>
+        <p>Please configure your GitHub token in settings.</p>
+        <a mat-raised-button color="primary" routerLink="/settings">Go to Settings</a>
+      </mat-card-content>
+    </mat-card>
+  </div>
+} @else if (loading()) {
+  <app-loading-spinner message="Loading releases..." />
+} @else if (error()) {
+  <div class="error-container">
+    <mat-card class="dashboard-card error-card">
+      <mat-card-content>
+        <mat-icon class="error-icon">error</mat-icon>
+        <h3>Error</h3>
+        <p>{{ error() }}</p>
+        <button mat-raised-button color="primary" (click)="refresh()">Try Again</button>
+      </mat-card-content>
+    </mat-card>
+  </div>
+} @else {
+  <div class="releases-container">
+    <div class="page-header">
+      <div class="header-info">
+        <h1>Releases</h1>
+        <p>Published releases across your repositories</p>
+      </div>
+      <button mat-fab extended color="primary" (click)="refresh()">
+        <mat-icon>refresh</mat-icon>
+        Refresh
+      </button>
+    </div>
+
+    <mat-card class="dashboard-card filters-card">
+      <mat-card-content>
+        <div class="filters">
+          <mat-form-field appearance="outline">
+            <mat-label>Filter by repository</mat-label>
+            <mat-select [value]="selectedRepo()" (selectionChange)="onRepoChange($event.value)">
+              <mat-option value="all">All Repositories</mat-option>
+              @for (repo of repos(); track repo.id) {
+                <mat-option [value]="repo.name">{{ repo.name }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    @if (filteredReleases().length === 0) {
+      <mat-card class="dashboard-card no-data-card">
+        <mat-card-content>
+          <div class="no-data">
+            <mat-icon>new_releases</mat-icon>
+            <h3>No Releases Found</h3>
+            <p>There are no releases in the selected repositories.</p>
+          </div>
+        </mat-card-content>
+      </mat-card>
+    } @else {
+      <div class="releases-grid">
+        @for (release of filteredReleases(); track release.id) {
+          <mat-card class="dashboard-card release-card" (click)="openRelease(release)">
+            <mat-card-header>
+              <div class="release-header">
+                <div class="tag-badge">
+                  <mat-icon>local_offer</mat-icon>
+                  {{ release.tag_name }}
+                </div>
+                <div class="release-badges">
+                  @if (release.prerelease) {
+                    <span class="badge prerelease">Pre-release</span>
+                  }
+                  @if (release.draft) {
+                    <span class="badge draft">Draft</span>
+                  }
+                </div>
+              </div>
+            </mat-card-header>
+
+            <mat-card-content>
+              <h3 class="release-name">{{ release.name || release.tag_name }}</h3>
+
+              <div class="release-repo">
+                <mat-icon>folder</mat-icon>
+                <span>{{ release.repository?.name }}</span>
+              </div>
+
+              @if (release.body) {
+                <p class="release-body">{{ release.body | slice:0:150 }}{{ release.body.length > 150 ? '...' : '' }}</p>
+              }
+
+              <div class="release-meta">
+                <div class="meta-item">
+                  <img [src]="release.author?.avatar_url" [alt]="release.author?.login" class="author-avatar">
+                  <span>{{ release.author?.login }}</span>
+                </div>
+
+                <div class="meta-item" [matTooltip]="formatDate(release.created_at)">
+                  <mat-icon>schedule</mat-icon>
+                  <span>{{ getRelativeTime(release.created_at) }}</span>
+                </div>
+
+                @if (release.assets.length > 0) {
+                  <div class="meta-item downloads">
+                    <mat-icon>download</mat-icon>
+                    <span>{{ formatDownloads(getTotalDownloads(release)) }}</span>
+                  </div>
+                }
+              </div>
+
+              @if (release.assets.length > 0) {
+                <div class="assets-section">
+                  <span class="assets-label">Assets ({{ release.assets.length }})</span>
+                  <div class="assets-list">
+                    @for (asset of release.assets.slice(0, 3); track asset.id) {
+                      <div class="asset-item" [matTooltip]="asset.name">
+                        <mat-icon>insert_drive_file</mat-icon>
+                        <span class="asset-name">{{ asset.name }}</span>
+                        <span class="asset-downloads">{{ formatDownloads(asset.download_count) }}</span>
+                      </div>
+                    }
+                    @if (release.assets.length > 3) {
+                      <div class="more-assets">
+                        + {{ release.assets.length - 3 }} more
+                      </div>
+                    }
+                  </div>
+                </div>
+              }
+            </mat-card-content>
+
+            <mat-card-actions>
+              <button mat-button color="primary" (click)="openRelease(release); $event.stopPropagation()">
+                <mat-icon>open_in_new</mat-icon>
+                View on GitHub
+              </button>
+            </mat-card-actions>
+          </mat-card>
+        }
+      </div>
+    }
+  </div>
+}
+

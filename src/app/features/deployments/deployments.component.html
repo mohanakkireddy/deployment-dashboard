@@ -1,0 +1,123 @@
+@if (!isAuthenticated()) {
+  <div class="setup-prompt">
+    <mat-card class="dashboard-card setup-card">
+      <mat-card-content>
+        <mat-icon class="setup-icon">settings</mat-icon>
+        <h2>Setup Required</h2>
+        <p>Please configure your GitHub token in settings.</p>
+        <a mat-raised-button color="primary" routerLink="/settings">Go to Settings</a>
+      </mat-card-content>
+    </mat-card>
+  </div>
+} @else if (loading()) {
+  <app-loading-spinner message="Loading deployments..." />
+} @else if (error()) {
+  <div class="error-container">
+    <mat-card class="dashboard-card error-card">
+      <mat-card-content>
+        <mat-icon class="error-icon">error</mat-icon>
+        <h3>Error</h3>
+        <p>{{ error() }}</p>
+        <button mat-raised-button color="primary" (click)="refresh()">Try Again</button>
+      </mat-card-content>
+    </mat-card>
+  </div>
+} @else {
+  <div class="deployments-container">
+    <div class="page-header">
+      <div class="header-info">
+        <h1>Deployments</h1>
+        <p>Environment deployments across your repositories</p>
+      </div>
+      <button mat-fab extended color="primary" (click)="refresh()">
+        <mat-icon>refresh</mat-icon>
+        Refresh
+      </button>
+    </div>
+
+    <mat-card class="dashboard-card filters-card">
+      <mat-card-content>
+        <div class="filters">
+          <mat-form-field appearance="outline">
+            <mat-label>Filter by repository</mat-label>
+            <mat-select [value]="selectedRepo()" (selectionChange)="onRepoChange($event.value)">
+              <mat-option value="all">All Repositories</mat-option>
+              @for (repo of repos(); track repo.id) {
+                <mat-option [value]="repo.name">{{ repo.name }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Filter by environment</mat-label>
+            <mat-select [value]="selectedEnvironment()" (selectionChange)="onEnvironmentChange($event.value)">
+              <mat-option value="all">All Environments</mat-option>
+              @for (env of environments(); track env) {
+                <mat-option [value]="env">{{ env }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    @if (filteredDeployments().length === 0) {
+      <mat-card class="dashboard-card no-data-card">
+        <mat-card-content>
+          <div class="no-data">
+            <mat-icon>rocket_launch</mat-icon>
+            <h3>No Deployments Found</h3>
+            <p>There are no deployments in the selected repositories.</p>
+          </div>
+        </mat-card-content>
+      </mat-card>
+    } @else {
+      <div class="deployments-grid">
+        @for (entry of deploymentsByEnvironment() | keyvalue; track entry.key) {
+          <mat-card class="dashboard-card environment-card">
+            <mat-card-header>
+              <div class="env-header" [class]="getEnvironmentClass(entry.key)">
+                <mat-icon>{{ getEnvironmentIcon(entry.key) }}</mat-icon>
+                <span class="env-name">{{ entry.key }}</span>
+                <span class="env-count">{{ entry.value.length }} deployments</span>
+              </div>
+            </mat-card-header>
+            <mat-card-content>
+              <div class="deployment-list">
+                @for (deployment of entry.value.slice(0, 5); track deployment.id) {
+                  <div class="deployment-item">
+                    <div class="deployment-main">
+                      <app-status-chip [status]="deployment.latestStatus?.state || 'pending'" />
+                      <div class="deployment-info">
+                        <span class="deployment-repo">{{ deployment.repository?.name }}</span>
+                        <span class="deployment-ref">
+                          <mat-icon>commit</mat-icon>
+                          {{ deployment.ref }}
+                        </span>
+                      </div>
+                    </div>
+                    <div class="deployment-meta">
+                      <div class="deployment-creator">
+                        <img [src]="deployment.creator?.avatar_url" [alt]="deployment.creator?.login" class="creator-avatar">
+                        <span>{{ deployment.creator?.login }}</span>
+                      </div>
+                      <span class="deployment-time" [matTooltip]="formatDate(deployment.created_at)">
+                        {{ getRelativeTime(deployment.created_at) }}
+                      </span>
+                    </div>
+                  </div>
+                }
+                @if (entry.value.length > 5) {
+                  <div class="more-deployments">
+                    + {{ entry.value.length - 5 }} more deployments
+                  </div>
+                }
+              </div>
+            </mat-card-content>
+          </mat-card>
+        }
+      </div>
+    }
+  </div>
+}
+

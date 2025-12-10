@@ -1,0 +1,158 @@
+@if (!isAuthenticated()) {
+  <div class="setup-prompt">
+    <mat-card class="dashboard-card setup-card">
+      <mat-card-content>
+        <mat-icon class="setup-icon">settings</mat-icon>
+        <h2>Setup Required</h2>
+        <p>Please configure your GitHub token in settings.</p>
+        <a mat-raised-button color="primary" routerLink="/settings">Go to Settings</a>
+      </mat-card-content>
+    </mat-card>
+  </div>
+} @else if (loading()) {
+  <app-loading-spinner message="Loading workflow runs..." />
+} @else if (error()) {
+  <div class="error-container">
+    <mat-card class="dashboard-card error-card">
+      <mat-card-content>
+        <mat-icon class="error-icon">error</mat-icon>
+        <h3>Error</h3>
+        <p>{{ error() }}</p>
+        <button mat-raised-button color="primary" (click)="refresh()">Try Again</button>
+      </mat-card-content>
+    </mat-card>
+  </div>
+} @else {
+  <div class="workflows-container">
+    <div class="page-header">
+      <div class="header-info">
+        <h1>Workflow Runs</h1>
+        <p>GitHub Actions workflow runs across your repositories</p>
+      </div>
+      <button mat-fab extended color="primary" (click)="refresh()">
+        <mat-icon>refresh</mat-icon>
+        Refresh
+      </button>
+    </div>
+
+    <mat-card class="dashboard-card filters-card">
+      <mat-card-content>
+        <div class="filters">
+          <mat-form-field appearance="outline">
+            <mat-label>Filter by repository</mat-label>
+            <mat-select [value]="selectedRepo()" (selectionChange)="onRepoChange($event.value)">
+              <mat-option value="all">All Repositories</mat-option>
+              @for (repo of repos(); track repo.id) {
+                <mat-option [value]="repo.name">{{ repo.name }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Search workflows</mat-label>
+            <mat-icon matPrefix>search</mat-icon>
+            <input matInput (keyup)="applyFilter($event)" placeholder="Search...">
+          </mat-form-field>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="dashboard-card table-card">
+      @if (dataSource.data.length === 0) {
+        <div class="no-data">
+          <mat-icon>play_circle</mat-icon>
+          <h3>No Workflow Runs Found</h3>
+          <p>There are no workflow runs in the selected repositories.</p>
+        </div>
+      } @else {
+        <table mat-table [dataSource]="dataSource" matSort class="workflows-table">
+          <!-- Status Column -->
+          <ng-container matColumnDef="status">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Status</th>
+            <td mat-cell *matCellDef="let run">
+              <app-status-chip [status]="run.conclusion || run.status" />
+            </td>
+          </ng-container>
+
+          <!-- Name Column -->
+          <ng-container matColumnDef="name">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Workflow</th>
+            <td mat-cell *matCellDef="let run">
+              <div class="workflow-name">
+                <span class="name">{{ run.display_title || run.name }}</span>
+                <span class="run-number">#{{ run.run_number }}</span>
+              </div>
+            </td>
+          </ng-container>
+
+          <!-- Repository Column -->
+          <ng-container matColumnDef="repository">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Repository</th>
+            <td mat-cell *matCellDef="let run">
+              <span class="repo-name">{{ run.repository?.name }}</span>
+            </td>
+          </ng-container>
+
+          <!-- Branch Column -->
+          <ng-container matColumnDef="branch">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Branch</th>
+            <td mat-cell *matCellDef="let run">
+              <span class="branch-badge">
+                <mat-icon>account_tree</mat-icon>
+                {{ run.head_branch }}
+              </span>
+            </td>
+          </ng-container>
+
+          <!-- Actor Column -->
+          <ng-container matColumnDef="actor">
+            <th mat-header-cell *matHeaderCellDef>Triggered By</th>
+            <td mat-cell *matCellDef="let run">
+              <div class="actor-info">
+                <img [src]="run.actor?.avatar_url" [alt]="run.actor?.login" class="actor-avatar">
+                <span>{{ run.actor?.login }}</span>
+              </div>
+            </td>
+          </ng-container>
+
+          <!-- Duration Column -->
+          <ng-container matColumnDef="duration">
+            <th mat-header-cell *matHeaderCellDef>Duration</th>
+            <td mat-cell *matCellDef="let run">
+              <span class="duration">
+                <mat-icon>timer</mat-icon>
+                {{ getDuration(run) }}
+              </span>
+            </td>
+          </ng-container>
+
+          <!-- Created Column -->
+          <ng-container matColumnDef="created">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Started</th>
+            <td mat-cell *matCellDef="let run">
+              <span [matTooltip]="formatDate(run.created_at)">
+                {{ getRelativeTime(run.created_at) }}
+              </span>
+            </td>
+          </ng-container>
+
+          <!-- Actions Column -->
+          <ng-container matColumnDef="actions">
+            <th mat-header-cell *matHeaderCellDef></th>
+            <td mat-cell *matCellDef="let run">
+              <button mat-icon-button (click)="openRun(run)" matTooltip="View on GitHub">
+                <mat-icon>open_in_new</mat-icon>
+              </button>
+            </td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+          <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+        </table>
+
+        <mat-paginator [pageSizeOptions]="[10, 25, 50]" showFirstLastButtons />
+      }
+    </mat-card>
+  </div>
+}
+

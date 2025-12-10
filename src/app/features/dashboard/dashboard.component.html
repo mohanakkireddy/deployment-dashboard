@@ -1,0 +1,226 @@
+@if (!isAuthenticated()) {
+  <div class="setup-prompt">
+    <mat-card class="dashboard-card setup-card">
+      <mat-card-content>
+        <mat-icon class="setup-icon">settings</mat-icon>
+        <h2>Welcome to Deploy Monitor</h2>
+        <p>To get started, configure your GitHub Personal Access Token and select an organization.</p>
+        <a mat-raised-button color="primary" routerLink="/settings">
+          <mat-icon>arrow_forward</mat-icon>
+          Go to Settings
+        </a>
+      </mat-card-content>
+    </mat-card>
+  </div>
+} @else if (loading()) {
+  <app-loading-spinner message="Loading dashboard data..." />
+} @else if (error()) {
+  <div class="error-container">
+    <mat-card class="dashboard-card error-card">
+      <mat-card-content>
+        <mat-icon class="error-icon">error</mat-icon>
+        <h3>Error Loading Data</h3>
+        <p>{{ error() }}</p>
+        <button mat-raised-button color="primary" (click)="refresh()">
+          <mat-icon>refresh</mat-icon>
+          Try Again
+        </button>
+      </mat-card-content>
+    </mat-card>
+  </div>
+} @else {
+  <div class="dashboard-container">
+    <!-- Stats Cards -->
+    <div class="stats-grid">
+      <mat-card class="dashboard-card stat-card">
+        <mat-card-content>
+          <div class="stat-icon workflows">
+            <mat-icon>play_circle</mat-icon>
+          </div>
+          <div class="stat-info">
+            <span class="stat-value">{{ totalWorkflows() }}</span>
+            <span class="stat-label">Workflow Runs</span>
+          </div>
+          <div class="stat-detail">
+            <span class="success">{{ successfulWorkflows() }} passed</span>
+            <span class="failure">{{ failedWorkflows() }} failed</span>
+          </div>
+        </mat-card-content>
+      </mat-card>
+
+      <mat-card class="dashboard-card stat-card">
+        <mat-card-content>
+          <div class="stat-icon deployments">
+            <mat-icon>rocket_launch</mat-icon>
+          </div>
+          <div class="stat-info">
+            <span class="stat-value">{{ totalDeployments() }}</span>
+            <span class="stat-label">Deployments</span>
+          </div>
+          <div class="stat-detail">
+            <span class="success">{{ successfulDeployments() }} successful</span>
+          </div>
+        </mat-card-content>
+      </mat-card>
+
+      <mat-card class="dashboard-card stat-card">
+        <mat-card-content>
+          <div class="stat-icon releases">
+            <mat-icon>new_releases</mat-icon>
+          </div>
+          <div class="stat-info">
+            <span class="stat-value">{{ totalReleases() }}</span>
+            <span class="stat-label">Releases</span>
+          </div>
+          <div class="stat-detail">
+            <span>Across {{ repos().length }} repos</span>
+          </div>
+        </mat-card-content>
+      </mat-card>
+
+      <mat-card class="dashboard-card stat-card">
+        <mat-card-content>
+          <div class="stat-icon repos">
+            <mat-icon>folder</mat-icon>
+          </div>
+          <div class="stat-info">
+            <span class="stat-value">{{ repos().length }}</span>
+            <span class="stat-label">Repositories</span>
+          </div>
+          <div class="stat-detail">
+            <span>{{ organization() || 'Personal' }}</span>
+          </div>
+        </mat-card-content>
+      </mat-card>
+    </div>
+
+    <!-- Charts and Recent Activity -->
+    <div class="content-grid">
+      <!-- Workflow Status Chart -->
+      <mat-card class="dashboard-card chart-card">
+        <mat-card-header>
+          <mat-card-title>Workflow Status Distribution</mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          @if (workflowStatusData().length > 0) {
+            <ngx-charts-pie-chart
+              [results]="workflowStatusData()"
+              scheme="cool"
+              [legend]="true"
+              [legendTitle]="'Status'"
+              [doughnut]="true"
+              [arcWidth]="0.4">
+            </ngx-charts-pie-chart>
+          } @else {
+            <div class="no-data">
+              <mat-icon>bar_chart</mat-icon>
+              <p>No workflow data available</p>
+            </div>
+          }
+        </mat-card-content>
+      </mat-card>
+
+      <!-- Recent Workflows -->
+      <mat-card class="dashboard-card list-card">
+        <mat-card-header>
+          <mat-card-title>Recent Workflows</mat-card-title>
+          <a mat-button routerLink="/workflows" class="view-all">View All</a>
+        </mat-card-header>
+        <mat-card-content>
+          @if (recentWorkflows().length > 0) {
+            <div class="activity-list">
+              @for (run of recentWorkflows(); track run.id) {
+                <div class="activity-item">
+                  <app-status-chip [status]="run.conclusion || run.status" />
+                  <div class="activity-info">
+                    <span class="activity-name">{{ run.display_title || run.name }}</span>
+                    <span class="activity-meta">
+                      {{ run.repository?.name }} • {{ getRelativeTime(run.created_at) }}
+                    </span>
+                  </div>
+                </div>
+              }
+            </div>
+          } @else {
+            <div class="no-data">
+              <mat-icon>play_circle</mat-icon>
+              <p>No recent workflows</p>
+            </div>
+          }
+        </mat-card-content>
+      </mat-card>
+
+      <!-- Recent Deployments -->
+      <mat-card class="dashboard-card list-card">
+        <mat-card-header>
+          <mat-card-title>Recent Deployments</mat-card-title>
+          <a mat-button routerLink="/deployments" class="view-all">View All</a>
+        </mat-card-header>
+        <mat-card-content>
+          @if (recentDeployments().length > 0) {
+            <div class="activity-list">
+              @for (deploy of recentDeployments(); track deploy.id) {
+                <div class="activity-item">
+                  <app-status-chip [status]="deploy.latestStatus?.state || 'pending'" />
+                  <div class="activity-info">
+                    <span class="activity-name">{{ deploy.environment }}</span>
+                    <span class="activity-meta">
+                      {{ deploy.repository?.name }} • {{ getRelativeTime(deploy.created_at) }}
+                    </span>
+                  </div>
+                </div>
+              }
+            </div>
+          } @else {
+            <div class="no-data">
+              <mat-icon>rocket_launch</mat-icon>
+              <p>No recent deployments</p>
+            </div>
+          }
+        </mat-card-content>
+      </mat-card>
+
+      <!-- Recent Releases -->
+      <mat-card class="dashboard-card list-card">
+        <mat-card-header>
+          <mat-card-title>Recent Releases</mat-card-title>
+          <a mat-button routerLink="/releases" class="view-all">View All</a>
+        </mat-card-header>
+        <mat-card-content>
+          @if (recentReleases().length > 0) {
+            <div class="activity-list">
+              @for (release of recentReleases(); track release.id) {
+                <div class="activity-item">
+                  <div class="release-tag">
+                    <mat-icon>local_offer</mat-icon>
+                    {{ release.tag_name }}
+                  </div>
+                  <div class="activity-info">
+                    <span class="activity-name">{{ release.name || release.tag_name }}</span>
+                    <span class="activity-meta">
+                      {{ release.repository?.name }} • {{ getRelativeTime(release.created_at) }}
+                    </span>
+                  </div>
+                </div>
+              }
+            </div>
+          } @else {
+            <div class="no-data">
+              <mat-icon>new_releases</mat-icon>
+              <p>No recent releases</p>
+            </div>
+          }
+        </mat-card-content>
+      </mat-card>
+    </div>
+
+    <!-- Refresh Button -->
+    <div class="actions">
+      <button mat-fab extended color="primary" (click)="refresh()">
+        <mat-icon>refresh</mat-icon>
+        Refresh Data
+      </button>
+    </div>
+  </div>
+}
+
