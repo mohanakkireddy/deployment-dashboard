@@ -1,49 +1,29 @@
-# Test workflow to trigger failure monitoring
-# Run manually from Actions tab to test the notification flow
-
+# .github/workflows/test-monitoring.yml
 name: Test Failure Monitoring
 
 on:
-  workflow_dispatch:  # Manual trigger from GitHub UI
+  workflow_dispatch:
   push:
     branches: [main]
 
 jobs:
-  # Simulate a deployment that fails
   simulate-deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Simulate deployment failure
+      - uses: actions/checkout@v4
+      - name: Simulate failure
         run: |
-          echo "Starting deployment..."
-          echo "Building application..."
-          sleep 2
-          echo "ERROR: Deployment failed - simulated error for testing"
-          exit 1  # This makes the job fail
+          echo "Deploying..."
+          exit 1
 
-  # Notify on failure
   notify-on-failure:
     needs: simulate-deploy
     if: failure()
-    runs-on: ubuntu-latest
-    steps:
-      - name: Send failure notification
-        env:
-          MONITORING_URL: ${{ secrets.MONITORING_SERVICE_URL }}
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          curl -X POST \
-            -H "Content-Type: application/json" \
-            -d '{
-              "owner": "${{ github.repository_owner }}",
-              "repo": "${{ github.event.repository.name }}",
-              "run_id": ${{ github.run_id }},
-              "workflow_name": "${{ github.workflow }}",
-              "branch": "${{ github.ref_name }}",
-              "triggered_by": "${{ github.actor }}",
-              "github_token": "'"$GH_TOKEN"'"
-            }' \
-            "$MONITORING_URL/webhook/deployment-failure"
+    uses: mohanakkireddy/deployment-monitoring-service/.github/workflows/deployment-monitor.yml@main
+    with:
+      repo: ${{ github.repository }}
+      run_id: ${{ github.run_id }}
+      workflow_name: ${{ github.workflow }}
+      branch: ${{ github.ref_name }}
+    secrets:
+      MONITORING_SERVICE_URL: ${{ secrets.MONITORING_SERVICE_URL }}
