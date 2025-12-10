@@ -9,10 +9,8 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { MatTabsModule } from '@angular/material/tabs';
 import { AuthService } from '../../core/services/auth.service';
 import { GitHubService } from '../../core/services/github.service';
-import { OAuthService, OAUTH_CONFIG } from '../../core/services/oauth.service';
 import { GitHubUser } from '../../core/models';
 
 @Component({
@@ -28,8 +26,7 @@ import { GitHubUser } from '../../core/models';
     MatSelectModule,
     MatSnackBarModule,
     MatDividerModule,
-    MatProgressSpinnerModule,
-    MatTabsModule
+    MatProgressSpinnerModule
   ],
   templateUrl: './settings.component.html',
   styleUrl: './settings.component.scss'
@@ -37,7 +34,6 @@ import { GitHubUser } from '../../core/models';
 export class SettingsComponent implements OnInit {
   private authService = inject(AuthService);
   private githubService = inject(GitHubService);
-  private oauthService = inject(OAuthService);
   private snackBar = inject(MatSnackBar);
 
   token = signal('');
@@ -46,22 +42,14 @@ export class SettingsComponent implements OnInit {
 
   loading = signal(false);
   verifying = signal(false);
-  oauthLoading = signal(false);
 
   currentUser = signal<GitHubUser | null>(null);
   organizations = signal<{ login: string; id: number; avatar_url: string }[]>([]);
 
   isAuthenticated = this.authService.isAuthenticated;
   storedOrganization = this.authService.organization;
-  isOAuthConfigured = this.oauthService.isOAuthConfigured();
 
   ngOnInit(): void {
-    // Handle OAuth callback if present
-    if (this.oauthService.hasCallbackParams()) {
-      this.handleOAuthCallback();
-      return;
-    }
-
     if (this.isAuthenticated()) {
       this.loadUserData();
     }
@@ -70,25 +58,6 @@ export class SettingsComponent implements OnInit {
     if (org) {
       this.selectedOrg.set(org);
     }
-  }
-
-  private handleOAuthCallback(): void {
-    this.oauthLoading.set(true);
-    this.oauthService.handleCallback().subscribe({
-      next: (success) => {
-        this.oauthLoading.set(false);
-        if (success) {
-          this.snackBar.open('Successfully logged in with GitHub!', 'Close', { duration: 3000 });
-          this.loadUserData();
-        } else {
-          this.snackBar.open('OAuth login failed. Please try again.', 'Close', { duration: 3000 });
-        }
-      },
-      error: () => {
-        this.oauthLoading.set(false);
-        this.snackBar.open('OAuth login failed. Please try again.', 'Close', { duration: 3000 });
-      }
-    });
   }
 
   private loadUserData(): void {
@@ -119,14 +88,16 @@ export class SettingsComponent implements OnInit {
     });
   }
 
-  loginWithGitHub(): void {
-    this.oauthService.login();
-  }
-
   saveToken(): void {
     const tokenValue = this.token().trim();
     if (!tokenValue) {
       this.snackBar.open('Please enter a valid token', 'Close', { duration: 3000 });
+      return;
+    }
+
+    // Validate token format
+    if (!tokenValue.startsWith('ghp_') && !tokenValue.startsWith('github_pat_')) {
+      this.snackBar.open('Token should start with ghp_ or github_pat_', 'Close', { duration: 3000 });
       return;
     }
 

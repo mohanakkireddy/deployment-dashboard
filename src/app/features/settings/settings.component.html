@@ -4,248 +4,227 @@
     <p>Configure your GitHub connection and preferences</p>
   </div>
 
-  @if (oauthLoading()) {
-    <div class="oauth-loading">
-      <mat-card class="dashboard-card">
-        <mat-card-content>
-          <mat-spinner diameter="48" />
-          <h3>Logging in with GitHub...</h3>
-          <p>Please wait while we complete the authentication.</p>
-        </mat-card-content>
-      </mat-card>
-    </div>
-  } @else {
-    <div class="settings-grid">
-      <!-- Authentication Card -->
-      <mat-card class="dashboard-card settings-card auth-card">
-        <mat-card-header>
-          <mat-icon mat-card-avatar>key</mat-icon>
-          <mat-card-title>GitHub Authentication</mat-card-title>
-          <mat-card-subtitle>Connect your GitHub account</mat-card-subtitle>
-        </mat-card-header>
+  <div class="settings-grid">
+    <!-- Authentication Card -->
+    <mat-card class="dashboard-card settings-card auth-card">
+      <mat-card-header>
+        <mat-icon mat-card-avatar>key</mat-icon>
+        <mat-card-title>GitHub Authentication</mat-card-title>
+        <mat-card-subtitle>Connect your GitHub account using a Personal Access Token</mat-card-subtitle>
+      </mat-card-header>
 
-        <mat-card-content>
-          @if (isAuthenticated() && currentUser()) {
-            <div class="user-info">
-              <img [src]="currentUser()?.avatar_url" [alt]="currentUser()?.login" class="user-avatar">
-              <div class="user-details">
-                <span class="user-login">{{ currentUser()?.login }}</span>
-                <span class="user-type">{{ currentUser()?.type }}</span>
-              </div>
-              <div class="connected-badge">
-                <mat-icon>check_circle</mat-icon>
-                Connected
-              </div>
+      <mat-card-content>
+        @if (isAuthenticated() && currentUser()) {
+          <div class="user-info">
+            <img [src]="currentUser()?.avatar_url" [alt]="currentUser()?.login" class="user-avatar">
+            <div class="user-details">
+              <span class="user-login">{{ currentUser()?.login }}</span>
+              <span class="user-type">{{ currentUser()?.type }}</span>
             </div>
-
-            <button mat-stroked-button color="warn" (click)="logout()">
-              <mat-icon>logout</mat-icon>
-              Disconnect
-            </button>
-          } @else {
-            <mat-tab-group>
-              <!-- OAuth Login Tab -->
-              <mat-tab>
-                <ng-template mat-tab-label>
-                  <mat-icon>login</mat-icon>
-                  <span>Login with GitHub</span>
-                </ng-template>
-                <div class="tab-content">
-                  @if (isOAuthConfigured) {
-                    <p class="helper-text">
-                      Click the button below to securely log in with your GitHub account.
-                      No need to create a token manually!
-                    </p>
-                    <button mat-raised-button color="primary" class="github-login-btn" (click)="loginWithGitHub()">
-                      <mat-icon>login</mat-icon>
-                      Login with GitHub
-                    </button>
-                  } @else {
-                    <div class="oauth-not-configured">
-                      <mat-icon>info</mat-icon>
-                      <div>
-                        <strong>OAuth Not Configured</strong>
-                        <p>
-                          To enable "Login with GitHub", you need to set up a GitHub OAuth App
-                          and configure the OAuth settings. See the setup guide below.
-                        </p>
-                      </div>
-                    </div>
-                  }
-                </div>
-              </mat-tab>
-
-              <!-- Manual Token Tab -->
-              <mat-tab>
-                <ng-template mat-tab-label>
-                  <mat-icon>vpn_key</mat-icon>
-                  <span>Personal Access Token</span>
-                </ng-template>
-                <div class="tab-content">
-                  <p class="helper-text">
-                    Create a Personal Access Token (PAT) with <code>repo</code> and <code>read:org</code> scopes.
-                    <a href="https://github.com/settings/tokens/new" target="_blank" class="link">
-                      Create token <mat-icon>open_in_new</mat-icon>
-                    </a>
-                  </p>
-
-                  <mat-form-field appearance="outline" class="full-width">
-                    <mat-label>Personal Access Token</mat-label>
-                    <input matInput
-                           [type]="hideToken() ? 'password' : 'text'"
-                           [(ngModel)]="token"
-                           placeholder="ghp_xxxxxxxxxxxxxxxxxxxx">
-                    <button mat-icon-button matSuffix (click)="toggleTokenVisibility()">
-                      <mat-icon>{{ hideToken() ? 'visibility' : 'visibility_off' }}</mat-icon>
-                    </button>
-                  </mat-form-field>
-
-                  <button mat-raised-button color="primary" (click)="saveToken()" [disabled]="verifying()">
-                    @if (verifying()) {
-                      <mat-spinner diameter="20" />
-                    } @else {
-                      <mat-icon>vpn_key</mat-icon>
-                    }
-                    Verify & Save Token
-                  </button>
-                </div>
-              </mat-tab>
-            </mat-tab-group>
-          }
-        </mat-card-content>
-      </mat-card>
-
-      <!-- Organization Card -->
-      <mat-card class="dashboard-card settings-card">
-        <mat-card-header>
-          <mat-icon mat-card-avatar>business</mat-icon>
-          <mat-card-title>Organization</mat-card-title>
-          <mat-card-subtitle>Select an organization to monitor its repositories</mat-card-subtitle>
-        </mat-card-header>
-
-        <mat-card-content>
-          @if (!isAuthenticated()) {
-            <div class="disabled-section">
-              <mat-icon>lock</mat-icon>
-              <p>Please authenticate first to select an organization</p>
+            <div class="connected-badge">
+              <mat-icon>check_circle</mat-icon>
+              Connected
             </div>
-          } @else if (loading()) {
-            <div class="loading-section">
-              <mat-spinner diameter="32" />
-              <p>Loading organizations...</p>
-            </div>
-          } @else {
+          </div>
+
+          <button mat-stroked-button color="warn" (click)="logout()">
+            <mat-icon>logout</mat-icon>
+            Disconnect
+          </button>
+        } @else {
+          <div class="token-section">
+            <p class="helper-text">
+              Create a Personal Access Token (PAT) with <code>repo</code> and <code>read:org</code> scopes.
+              <a href="https://github.com/settings/tokens/new?scopes=repo,read:org&description=Deployment%20Dashboard" target="_blank" class="link">
+                Create token <mat-icon>open_in_new</mat-icon>
+              </a>
+            </p>
+
             <mat-form-field appearance="outline" class="full-width">
-              <mat-label>Select Organization</mat-label>
-              <mat-select [(ngModel)]="selectedOrg" (selectionChange)="saveOrganization()">
-                <mat-option value="">Personal Account</mat-option>
-                @for (org of organizations(); track org.id) {
-                  <mat-option [value]="org.login">
-                    <div class="org-option">
-                      <img [src]="org.avatar_url" [alt]="org.login" class="org-avatar">
-                      {{ org.login }}
-                    </div>
-                  </mat-option>
-                }
-              </mat-select>
+              <mat-label>Personal Access Token</mat-label>
+              <input matInput
+                     [type]="hideToken() ? 'password' : 'text'"
+                     [(ngModel)]="token"
+                     placeholder="ghp_xxxxxxxxxxxxxxxxxxxx or github_pat_xxxxx">
+              <button mat-icon-button matSuffix (click)="toggleTokenVisibility()">
+                <mat-icon>{{ hideToken() ? 'visibility' : 'visibility_off' }}</mat-icon>
+              </button>
             </mat-form-field>
 
-            @if (storedOrganization()) {
-              <div class="current-org">
-                <span>Current: <strong>{{ storedOrganization() }}</strong></span>
-                <button mat-button color="warn" (click)="clearOrganization()">
-                  <mat-icon>clear</mat-icon>
-                  Clear
-                </button>
-              </div>
-            }
-          }
-        </mat-card-content>
-      </mat-card>
+            <button mat-raised-button color="primary" (click)="saveToken()" [disabled]="verifying()">
+              @if (verifying()) {
+                <mat-spinner diameter="20" />
+              } @else {
+                <mat-icon>vpn_key</mat-icon>
+              }
+              Verify & Save Token
+            </button>
+          </div>
+        }
+      </mat-card-content>
+    </mat-card>
 
-      <!-- OAuth Setup Guide -->
-      <mat-card class="dashboard-card setup-guide-card">
-        <mat-card-header>
-          <mat-icon mat-card-avatar>build</mat-icon>
-          <mat-card-title>OAuth Setup Guide</mat-card-title>
-          <mat-card-subtitle>Enable "Login with GitHub" button</mat-card-subtitle>
-        </mat-card-header>
+    <!-- SSO Instructions Card -->
+    <mat-card class="dashboard-card settings-card sso-card">
+      <mat-card-header>
+        <mat-icon mat-card-avatar>security</mat-icon>
+        <mat-card-title>Using GitHub SSO?</mat-card-title>
+        <mat-card-subtitle>Enterprise Single Sign-On (SAML) users</mat-card-subtitle>
+      </mat-card-header>
 
-        <mat-card-content>
-          <div class="setup-steps">
+      <mat-card-content>
+        <div class="sso-notice">
+          <p>If your organization uses <strong>GitHub Enterprise with SAML SSO</strong>, you need to authorize your token:</p>
+          
+          <div class="sso-steps">
             <div class="step">
               <div class="step-number">1</div>
               <div class="step-content">
-                <strong>Create GitHub OAuth App</strong>
-                <p>Go to <a href="https://github.com/settings/developers" target="_blank">GitHub Developer Settings</a> → OAuth Apps → New OAuth App</p>
-                <ul>
-                  <li>Application name: <code>Deployment Dashboard</code></li>
-                  <li>Homepage URL: Your GitHub Pages URL</li>
-                  <li>Authorization callback URL: Same as Homepage URL</li>
-                </ul>
+                <strong>Create your token</strong>
+                <p>Go to <a href="https://github.com/settings/tokens" target="_blank">GitHub Token Settings</a></p>
               </div>
             </div>
 
             <div class="step">
               <div class="step-number">2</div>
               <div class="step-content">
-                <strong>Deploy Token Exchange Proxy</strong>
-                <p>Since GitHub Pages is static, you need a small backend to exchange the OAuth code for a token.</p>
-                <p>Options:</p>
-                <ul>
-                  <li><strong>Cloudflare Worker</strong> (Free) - See code below</li>
-                  <li><strong>Netlify Function</strong></li>
-                  <li><strong>Vercel Serverless Function</strong></li>
-                </ul>
+                <strong>Click "Configure SSO"</strong>
+                <p>Find your token and click the <code>Configure SSO</code> button next to it</p>
               </div>
             </div>
 
             <div class="step">
               <div class="step-number">3</div>
               <div class="step-content">
-                <strong>Update Configuration</strong>
-                <p>Edit <code>src/app/core/services/oauth.service.ts</code> and set:</p>
-                <ul>
-                  <li><code>clientId</code>: Your OAuth App's Client ID</li>
-                  <li><code>tokenProxyUrl</code>: Your proxy endpoint URL</li>
-                  <li><code>redirectUri</code>: Your GitHub Pages URL</li>
-                </ul>
+                <strong>Authorize for your organization</strong>
+                <p>Click <code>Authorize</code> for each SSO-enabled organization you want to access</p>
+              </div>
+            </div>
+
+            <div class="step">
+              <div class="step-number">4</div>
+              <div class="step-content">
+                <strong>Paste token here</strong>
+                <p>Enter the authorized token in the authentication section</p>
               </div>
             </div>
           </div>
-        </mat-card-content>
-      </mat-card>
+        </div>
+      </mat-card-content>
+    </mat-card>
 
-      <!-- Info Card -->
-      <mat-card class="dashboard-card info-card">
-        <mat-card-header>
-          <mat-icon mat-card-avatar>info</mat-icon>
-          <mat-card-title>About This Dashboard</mat-card-title>
-        </mat-card-header>
+    <!-- Organization Card -->
+    <mat-card class="dashboard-card settings-card">
+      <mat-card-header>
+        <mat-icon mat-card-avatar>business</mat-icon>
+        <mat-card-title>Organization</mat-card-title>
+        <mat-card-subtitle>Select an organization to monitor its repositories</mat-card-subtitle>
+      </mat-card-header>
 
-        <mat-card-content>
-          <div class="info-content">
-            <p>
-              This dashboard monitors deployment activities from your GitHub repositories including:
-            </p>
-            <ul>
-              <li><mat-icon>play_circle</mat-icon> GitHub Actions workflow runs</li>
-              <li><mat-icon>rocket_launch</mat-icon> Environment deployments</li>
-              <li><mat-icon>new_releases</mat-icon> Published releases</li>
-            </ul>
+      <mat-card-content>
+        @if (!isAuthenticated()) {
+          <div class="disabled-section">
+            <mat-icon>lock</mat-icon>
+            <p>Please authenticate first to select an organization</p>
+          </div>
+        } @else if (loading()) {
+          <div class="loading-section">
+            <mat-spinner diameter="32" />
+            <p>Loading organizations...</p>
+          </div>
+        } @else {
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Select Organization</mat-label>
+            <mat-select [(ngModel)]="selectedOrg" (selectionChange)="saveOrganization()">
+              <mat-option value="">Personal Account</mat-option>
+              @for (org of organizations(); track org.id) {
+                <mat-option [value]="org.login">
+                  <div class="org-option">
+                    <img [src]="org.avatar_url" [alt]="org.login" class="org-avatar">
+                    {{ org.login }}
+                  </div>
+                </mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
 
-            <mat-divider />
+          @if (storedOrganization()) {
+            <div class="current-org">
+              <span>Current: <strong>{{ storedOrganization() }}</strong></span>
+              <button mat-button color="warn" (click)="clearOrganization()">
+                <mat-icon>clear</mat-icon>
+                Clear
+              </button>
+            </div>
+          }
 
-            <div class="security-notice">
-              <mat-icon>security</mat-icon>
-              <div>
-                <strong>Security Notice</strong>
-                <p>Your token is stored locally in your browser and never sent to any server other than GitHub's API.</p>
-              </div>
+          @if (organizations().length === 0) {
+            <div class="no-orgs-notice">
+              <mat-icon>info</mat-icon>
+              <span>No organizations found. Using personal repositories.</span>
+            </div>
+          }
+        }
+      </mat-card-content>
+    </mat-card>
+
+    <!-- Info Card -->
+    <mat-card class="dashboard-card info-card">
+      <mat-card-header>
+        <mat-icon mat-card-avatar>info</mat-icon>
+        <mat-card-title>About This Dashboard</mat-card-title>
+      </mat-card-header>
+
+      <mat-card-content>
+        <div class="info-content">
+          <p>
+            This dashboard monitors deployment activities from your GitHub repositories including:
+          </p>
+          <ul>
+            <li><mat-icon>play_circle</mat-icon> GitHub Actions workflow runs</li>
+            <li><mat-icon>rocket_launch</mat-icon> Environment deployments</li>
+            <li><mat-icon>new_releases</mat-icon> Published releases</li>
+          </ul>
+
+          <mat-divider />
+
+          <div class="security-notice">
+            <mat-icon>security</mat-icon>
+            <div>
+              <strong>Security Notice</strong>
+              <p>Your token is stored locally in your browser and never sent to any server other than GitHub's API.</p>
             </div>
           </div>
-        </mat-card-content>
-      </mat-card>
-    </div>
-  }
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- Token Scopes Card -->
+    <mat-card class="dashboard-card scopes-card">
+      <mat-card-header>
+        <mat-icon mat-card-avatar>verified_user</mat-icon>
+        <mat-card-title>Required Token Scopes</mat-card-title>
+        <mat-card-subtitle>Permissions needed for full functionality</mat-card-subtitle>
+      </mat-card-header>
+
+      <mat-card-content>
+        <div class="scopes-list">
+          <div class="scope-item">
+            <mat-icon class="scope-icon">check_circle</mat-icon>
+            <div class="scope-info">
+              <strong>repo</strong>
+              <span>Full control of private repositories (required for deployments & workflows)</span>
+            </div>
+          </div>
+          <div class="scope-item">
+            <mat-icon class="scope-icon">check_circle</mat-icon>
+            <div class="scope-info">
+              <strong>read:org</strong>
+              <span>Read organization membership (required for org selection)</span>
+            </div>
+          </div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+  </div>
 </div>
