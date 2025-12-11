@@ -382,3 +382,47 @@ button {
     margin-right: 8px;
   }
 }
+
+// Monitoring Service Card
+.monitoring-card {
+  .monitoring-section {
+    .helper-text {
+      color: rgba(255, 255, 255, 0.7);
+      font-size: 14px;
+      margin-bottom: 16px;
+      line-height: 1.6;
+
+      code {
+        background: rgba(255, 255, 255, 0.1);
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-family: monospace;
+        color: #00d9ff;
+      }
+    }
+  }
+
+  .monitoring-actions {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 16px;
+  }
+
+  .monitoring-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 16px;
+    background: rgba(255, 193, 7, 0.1);
+    border-radius: 8px;
+    color: #ffc107;
+    font-size: 13px;
+
+    mat-icon {
+      font-size: 18px;
+      width: 18px;
+      height: 18px;
+    }
+  }
+}

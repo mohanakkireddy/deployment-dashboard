@@ -114,3 +114,13 @@ html, body {
 .gap-1 { gap: 8px; }
 .gap-2 { gap: 16px; }
 .gap-3 { gap: 24px; }
+
+// Summary Dialog Panel
+.summary-dialog-panel {
+  .mat-mdc-dialog-container {
+    --mdc-dialog-container-color: #1a1a2e;
+    --mdc-dialog-container-shape: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 24px 80px rgba(0, 0, 0, 0.6);
+  }
+}

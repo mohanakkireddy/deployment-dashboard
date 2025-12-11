@@ -192,3 +192,30 @@ mat-paginator {
   color: rgba(255, 255, 255, 0.7);
 }
 
+.action-buttons {
+  display: flex;
+  gap: 4px;
+  justify-content: flex-end;
+
+  .summary-btn {
+    color: #00d9ff;
+    
+    &:hover {
+      background: rgba(0, 217, 255, 0.1);
+    }
+
+    mat-icon {
+      animation: pulse 2s ease-in-out infinite;
+    }
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
+}
+

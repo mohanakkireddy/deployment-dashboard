@@ -63,3 +63,26 @@ export interface RepositoriesResponse {
   repositories?: GitHubRepository[];
 }
 
+export interface FailureSummary {
+  summary: string;
+  root_cause: string;
+  suggested_fix: string;
+  severity: 'critical' | 'high' | 'medium' | 'low' | 'unknown';
+  error_type: 'build' | 'test' | 'deploy' | 'dependency' | 'configuration' | 'permission' | 'other';
+}
+
+export interface WorkflowRunSummaryResponse {
+  run_id: number;
+  workflow_name: string;
+  repository: string;
+  branch: string;
+  created_at: string;
+  html_url: string;
+  ai_summary: FailureSummary;
+  pr?: {
+    number: number;
+    title: string;
+    author: string;
+    html_url: string;
+  } | null;
+}

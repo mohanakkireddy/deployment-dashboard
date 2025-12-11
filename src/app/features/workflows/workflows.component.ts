@@ -9,12 +9,14 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { RouterLink } from '@angular/router';
 import { GitHubService } from '../../core/services/github.service';
 import { AuthService } from '../../core/services/auth.service';
 import { WorkflowRun, GitHubRepository } from '../../core/models';
 import { LoadingSpinnerComponent } from '../../shared/components/loading-spinner/loading-spinner.component';
 import { StatusChipComponent } from '../../shared/components/status-chip/status-chip.component';
+import { SummaryDialogComponent, SummaryDialogData } from '../../shared/components/summary-dialog/summary-dialog.component';
 
 @Component({
   selector: 'app-workflows',
@@ -30,6 +32,7 @@ import { StatusChipComponent } from '../../shared/components/status-chip/status-
     MatInputModule,
     MatSelectModule,
     MatTooltipModule,
+    MatDialogModule,
     RouterLink,
     LoadingSpinnerComponent,
     StatusChipComponent
@@ -40,6 +43,7 @@ import { StatusChipComponent } from '../../shared/components/status-chip/status-
 export class WorkflowsComponent implements OnInit {
   private githubService = inject(GitHubService);
   private authService = inject(AuthService);
+  private dialog = inject(MatDialog);
 
   @ViewChild(MatPaginator) paginator!: MatPaginator;
   @ViewChild(MatSort) sort!: MatSort;
@@ -168,6 +172,44 @@ export class WorkflowsComponent implements OnInit {
 
   openRun(run: WorkflowRun): void {
     window.open(run.html_url, '_blank');
+  }
+
+  isFailedRun(run: WorkflowRun): boolean {
+    return run.conclusion === 'failure';
+  }
+
+  viewSummary(run: WorkflowRun): void {
+    const dialogData: SummaryDialogData = {
+      run,
+      loading: true
+    };
+
+    const dialogRef = this.dialog.open(SummaryDialogComponent, {
+      data: dialogData,
+      panelClass: 'summary-dialog-panel',
+      maxWidth: '90vw'
+    });
+
+    // Fetch the summary
+    const owner = run.repository?.owner?.login;
+    const repo = run.repository?.name;
+
+    if (owner && repo) {
+      this.githubService.getWorkflowRunSummary(owner, repo, run.id).subscribe({
+        next: (summary) => {
+          dialogData.loading = false;
+          dialogData.summary = summary;
+        },
+        error: (err) => {
+          dialogData.loading = false;
+          dialogData.error = err.message || 'Failed to fetch AI summary. Make sure the deployment monitoring service is running.';
+          console.error('Failed to fetch summary:', err);
+        }
+      });
+    } else {
+      dialogData.loading = false;
+      dialogData.error = 'Repository information not available';
+    }
   }
 }
 

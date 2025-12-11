@@ -8,7 +8,8 @@ import {
   WorkflowRun,
   WorkflowRunsResponse,
   Workflow,
-  WorkflowsResponse
+  WorkflowsResponse,
+  WorkflowRunSummaryResponse
 } from '../models/workflow.model';
 import {
   Deployment,
@@ -179,6 +180,19 @@ export class GitHubService {
         new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
       ))
     );
+  }
+
+  // Deployment Monitoring Service - AI Summary
+  private readonly monitoringServiceUrl = 'https://hillary-unprevented-pinkly.ngrok-free.dev';
+
+  getWorkflowRunSummary(owner: string, repo: string, runId: number, prNumber?: number): Observable<WorkflowRunSummaryResponse> {
+    let url = `${this.monitoringServiceUrl}/api/workflows/${owner}/${repo}/runs/${runId}/summary`;
+    
+    if (prNumber) {
+      url += `?pr_number=${prNumber}`;
+    }
+
+    return this.http.get<WorkflowRunSummaryResponse>(url);
   }
 }
 
