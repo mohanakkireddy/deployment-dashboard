@@ -1,5 +1,5 @@
 import { Injectable, inject } from '@angular/core';
-import { HttpClient, HttpParams } from '@angular/common/http';
+import { HttpClient, HttpParams, HttpHeaders } from '@angular/common/http';
 import { Observable, forkJoin, of, catchError, map, switchMap } from 'rxjs';
 import { AuthService } from './auth.service';
 import {
@@ -192,7 +192,12 @@ export class GitHubService {
       url += `?pr_number=${prNumber}`;
     }
 
-    return this.http.get<WorkflowRunSummaryResponse>(url);
+    // Add header to skip ngrok browser warning page
+    const headers = new HttpHeaders({
+      'ngrok-skip-browser-warning': 'true'
+    });
+
+    return this.http.get<WorkflowRunSummaryResponse>(url, { headers });
   }
 }
 
